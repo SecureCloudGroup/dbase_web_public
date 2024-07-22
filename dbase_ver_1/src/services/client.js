@@ -1,3 +1,5 @@
+import { getLocalStoreHandle } from './indexeddb';
+
 let localConnection;
 let sendChannel;
 let receiveChannel;
@@ -12,21 +14,7 @@ const server_address = 'api.securecloudgroup.com';
 const turn_api = '725649c5ea4be63aff9781ecf3f1d69cab36';  // handle private later...
 let wsReadyPromise;
 
-import { getLocalStoreHandle } from './indexeddb';
 
-// const fetchTurnCredentials = async () => {
-//     try {
-//         const response = await fetch(`https://scg_test_1.metered.live/api/v1/turn/credentials?apiKey=${turn_api}`);
-//         if (!response.ok) {
-//             throw new Error('Failed to fetch TURN server credentials');
-//         }
-//         const iceServers = await response.json();
-//         return iceServers;
-//     } catch (error) {
-//         log('Error fetching TURN server credentials:', error);
-//         return [{ urls: 'stun:stun.l.google.com:19302' }]; // Fallback to default STUN server
-//     }
-// };
 const fetchTurnCredentials = async () => {
     try {
         const response = await fetch(`https://scg_test_1.metered.live/api/v1/turn/credentials?apiKey=${turn_api}`);
@@ -174,7 +162,7 @@ const setupWebRTC = async (setReadyToCommunicate) => {
         if (localConnection.iceConnectionState === 'failed' || localConnection.iceConnectionState === 'disconnected') {
             log('client - localConnection.oniceconnectionstatechange - Connection failed or disconnected');
             setReadyToCommunicate(false);
-            log('client - localConnection - readyToCommunicate: ',readyToCommunicate);
+            // log('client - localConnection - readyToCommunicate: ',readyToCommunicate);
         }
     };
 
@@ -334,7 +322,7 @@ const handleReceiveMessage = async (event) => {
 
         // Assuming that each chunk starts with a key that is included in the JSON string, we need to extract it and then assemble the chunks.
         const textDecoder = new TextDecoder();
-        const textEncoder = new TextEncoder();
+        // const textEncoder = new TextEncoder();
 
         // Append the received buffer to the corresponding buffer array for the given key
         if (!receivedBuffers[key]) {

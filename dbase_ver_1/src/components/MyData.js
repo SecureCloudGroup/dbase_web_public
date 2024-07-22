@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { AppContext } from '../context/AppContext';
-import { initDatabase, checkDbOpen, processAndStoreFile, deriveKeyFromSignature, updateFileTable, getFileCount, deleteFile, downloadFile, checkLocalFileExistence } from '../services/indexeddb';
-import { getAccount, isMetaMaskConnected, getPublicKey, signData } from '../services/metamask';
+import { initDatabase, checkDbOpen, processAndStoreFile, deriveKeyFromSignature, updateFileTable, getFileCount, deleteFile, checkLocalFileExistence, decodeFileName } from '../services/indexeddb';
+import { getAccount, getPublicKey, signData } from '../services/metamask';
 import DangerModal from './DangerModal';
 import OrangeModal from './OrangeModal';
 // import Spinner from './Spinner';
@@ -10,6 +10,7 @@ import ProgressBar from './ProgressBar';
 import CombinedModal from './CombinedModal';
 import ErrorModal from './ErrorModal';
 import { deriveKeyFromPassword } from '../services/deriveKeyFromPassword';
+import { downloadLocalStoreFile } from '../services/localStore';
 
 const MyData = () => {
     const { bnodeid, localStoreFolder, setReadyToCommunicate, useLightTheme } = useContext(AppContext);
@@ -31,6 +32,8 @@ const MyData = () => {
     const [saveFileToDBase, setSaveFileToDBase] = useState(false);
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [errorDetails, setErrorDetails] = useState('');
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState(0);
 
     useEffect(() => {
         async function initialize() {
@@ -152,6 +155,21 @@ const MyData = () => {
         await refreshFileTable();
         const fileCount = await getFileCount();
         setFileCount(fileCount);
+    };
+
+    const handleDownload = async (fileName) => {
+        setIsDownloading(true);
+        setDownloadProgress(0);
+        const walletAddress = await getAccount();
+        const signature = await signData(walletAddress);
+        const key = await deriveKeyFromSignature(signature, walletAddress);
+        await downloadLocalStoreFile(localStoreFolder, fileName, key, setDownloadProgress);
+        setIsDownloading(false);
+    };
+
+    const formatFileName = (encodedName) => {
+        const decodedName = decodeFileName(encodedName);
+        return decodedName.startsWith('dbase_') ? decodedName.slice(6) : decodedName;
     };
 
     return (

@@ -111,7 +111,8 @@ const Base = ({ children }) => {
                         {isConnected ? (
                             <>
                                 {verificationFailed ? (
-                                    <button className="btn btn-warning me-2" onClick={handleVerifyRegistration}>Sign Challenge</button>
+                                    {/* <button className="btn btn-warning me-2" onClick={handleVerifyRegistration}>Sign Challenge</button> */}
+                                    
                                 ) : (
                                     <>
                                         <div
