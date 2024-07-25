@@ -6,7 +6,7 @@ const Index = () => {
 
     return (
         <div>
-            <h1>Welcome to dBase_v3</h1>
+            <h1>Welcome to dBase</h1>
             <p>{isConnected ? `Connected to MetaMask with BNodeID: ${bnodeid}` : 'Please connect to MetaMask'}</p>
         </div>
     );
