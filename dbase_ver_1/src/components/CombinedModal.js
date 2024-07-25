@@ -1,13 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import PropTypes from 'prop-types';
+import { AppContext } from '../context/AppContext';
+import { getAccount, getPublicKey, signData } from '../services/metamask';
+import { processAndStoreFile, deriveKeyFromSignature, getFileCount } from '../services/indexeddb';
+import { deriveKeyFromPassword } from '../services/deriveKeyFromPassword';
 
 const CombinedModal = ({ isOpen, onClose, onSave, initialFileName }) => {
+    const {bnodeid, localStoreFolder, setReadyToCommunicate } = useContext(AppContext);
     const [newFileName, setNewFileName] = useState(initialFileName);
     const [saveToDBase, setSaveToDBase] = useState(true);
     const [encryptionMethod, setEncryptionMethod] = useState('MetaMask');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [fileName, setFileName] = useState('');
+    const [saveFileToDBase, setSaveFileToDBase] = useState(false);
+    const [combinedModalOpen, setCombinedModalOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [errorDetails, setErrorDetails] = useState('');
+    const [errorModalOpen, setErrorModalOpen] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -76,9 +89,9 @@ const CombinedModal = ({ isOpen, onClose, onSave, initialFileName }) => {
                 setReadyToCommunicate,
                 encryptionMethod
             );
-            await refreshFileTable();
-            const fileCount = await getFileCount();
-            setFileCount(fileCount);
+            // await refreshFileTable();
+            // const fileCount = await getFileCount();
+            // setFileCount(fileCount);
         } catch (error) {
             setErrorDetails(error.message || error.toString());
             setErrorModalOpen(true);
