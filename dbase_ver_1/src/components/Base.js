@@ -9,6 +9,7 @@ import { faIdBadge, faFolder, faWallet } from '@fortawesome/free-solid-svg-icons
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../static/css/style.css';
 import { Modal, Button } from 'react-bootstrap';
+import { initializeWebRTC } from '../services/client';  // Import the initializeWebRTC function
 
 const Base = ({ children }) => {
     const {
@@ -23,7 +24,9 @@ const Base = ({ children }) => {
         useLightTheme,
         toggleTheme,
         readyToCommunicate,
-        wsConnected
+        wsConnected,
+        setWsConnected,
+        setReadyToCommunicate
     } = useContext(AppContext);
 
     const [showModal, setShowModal] = useState(false);
@@ -67,6 +70,12 @@ const Base = ({ children }) => {
         }
     }, [isConnected, bnodeid, setBNodeId, setIsRegistered]);
 
+    useEffect(() => {
+        if (bnodeid) {
+            initializeWebRTC(bnodeid, setWsConnected, setReadyToCommunicate);
+        }
+    }, [bnodeid, setWsConnected, setReadyToCommunicate]);
+
     const handleSetLocalStoreClick = () => {
         handleSetLocalStore();
         handleClose();
@@ -107,46 +116,17 @@ const Base = ({ children }) => {
                         </ul>
                     </div>
                     <div className="ms-auto d-flex align-items-center">
-                        <style>
-                            {`
-                            .webrtc-status-circle {
-                                width: 40px;
-                                height: 40px;
-                                border-radius: 50%;
-                                display: flex;
-                                justify-content: center;
-                                align-items: center;
-                                color: white;
-                                margin-left: 0px;
-                                margin-right: 10px;
-                                font-size: 12px;
-                            }
-                            .connected {
-                                background-color: ${indicatorConnectedColor};
-                            }
-                            .disconnected {
-                                background-color: ${indicatorDisconnectedColor};
-                            }
-                            .ready {
-                                background-color: ${indicatorReadyColor};
-                            }
-                            .not-ready {
-                                background-color: ${indicatorNotReadyColor};
-                            }
-                            .indicators {
-                                display: flex;
-                                gap: 0px;
-                            }
-                            `}
-                        </style>
                         <div className="indicators">
-                            <div className={`webrtc-status-circle ${wsConnected ? 'connected' : 'disconnected'}`}>
+                            {/* <a style={{ color: 'white', marginRight: '10px' }}>HERE: {wsConnected.toString()}</a> */}
+
+                            <div className={`webrtc-status-circle ${wsConnected ? 'connected' : 'disconnected'}`} style={{ backgroundColor: wsConnected ? indicatorConnectedColor : indicatorDisconnectedColor }}>
                                 WS
                             </div>
-                            <div className={`webrtc-status-circle ${readyToCommunicate ? 'ready' : 'not-ready'}`}>
+                            <div className={`webrtc-status-circle ${readyToCommunicate ? 'ready' : 'not-ready'}`} style={{ backgroundColor: readyToCommunicate ? indicatorReadyColor : indicatorNotReadyColor }}>
                                 CHNL
                             </div>
                         </div>
+                        
                         <div className={`toggle-button ${themeClass}-toggle-button`} onClick={toggleTheme}>
                             <a style={{ color: 'white', fontSize: '10px' }}>theme</a>
                         </div>

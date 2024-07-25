@@ -47,6 +47,10 @@ const fetchTurnCredentials = async () => {
 };
 
 const initializeWebSocket = (peerId, setWsConnected, setReadyToCommunicate) => {
+
+    setWsConnected(false);  // TEST
+    log('client - initializeWebSocket - wsConnect: False');
+
     return new Promise((resolve, reject) => {
         const wsUrl = `wss://${server_address}/ws/${peerId}`;
         websocket = new WebSocket(wsUrl);
@@ -55,6 +59,7 @@ const initializeWebSocket = (peerId, setWsConnected, setReadyToCommunicate) => {
             log('client - initializeWebSocket - WebSocket connection opened');
             log('client - initializeWebSocket - WebSocket URL:', wsUrl);
             setWsConnected(true);
+            log('client - initializeWebSocket - wsConnect: True');
             resolve();
         };
 
@@ -77,6 +82,7 @@ const initializeWebSocket = (peerId, setWsConnected, setReadyToCommunicate) => {
         websocket.onclose = (event) => {
             log('client - websocket.onclose - WebSocket connection closed', event);
             setWsConnected(false);
+            log('client - initializeWebSocket - wsConnect onclose: False');
             reject();
         };
 

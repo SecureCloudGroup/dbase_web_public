@@ -221,44 +221,4 @@ body {
     border-color: #E55B52;
 }
 
-/* WebRTC status circles */
-.webrtc-status-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    margin-left: 0px;
-    margin-right: 10px;
-    font-size: 12px;
-}
 
-.connected {
-    background-color: #2ECC71;
-}
-
-.disconnected {
-    background-color: #E74C3C;
-}
-
-.ready {
-    background-color: #2ECC71;
-}
-
-.not-ready {
-    background-color: #E74C3C;
-}
-
-.peer-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-}
-
-.indicators {
-    display: flex;
-    gap: 10px;
-}

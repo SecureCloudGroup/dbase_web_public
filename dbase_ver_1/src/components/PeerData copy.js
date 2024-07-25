@@ -32,7 +32,7 @@ const PeerData = () => {
 
     useEffect(() => {
         if (bnodeid) {
-            initializeWebRTC(bnodeid, setWsConnected, setReadyToCommunicate);
+            // initializeWebRTC(bnodeid, setWsConnected, setReadyToCommunicate);
         }
     }, [bnodeid]);
 

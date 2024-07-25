@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { connectMetaMask, isMetaMaskConnected } from '../services/metamask';
-import { checkWalletRegistration, handleRegistration } from '../services/registration';
+import { checkWalletRegistration } from '../services/registration';
 import { getLocalStoreHandle, saveLocalStoreHandle } from '../services/indexeddb';
 
 const AppContext = createContext();
@@ -30,10 +30,8 @@ const AppProvider = ({ children }) => {
                     const storeHandles = await getLocalStoreHandle();
                     
                     const localStoreHandle = storeHandles.localDbaseFolderHandle;
-                    console.log('AppContext - initializeMetaMaskConnection - localStoreHandle: ',localStoreHandle);
                     setLocalStoreFolder(localStoreHandle);
                     const peerStoreHandle = storeHandles.peerDbaseFolderHandle;
-                    console.log('AppContext - initializeMetaMaskConnection - peerStoreHandle: ',peerStoreHandle);
                     setPeerStoreFolder(peerStoreHandle);
                 }
             }
@@ -66,10 +64,8 @@ const AppProvider = ({ children }) => {
                     const storeHandles = await getLocalStoreHandle();
                     
                     const localStoreHandle = storeHandles.localDbaseFolderHandle;
-                    console.log('AppContext - initializeMetaMaskConnection - localStoreHandle: ',localStoreHandle);
                     setLocalStoreFolder(localStoreHandle);
                     const peerStoreHandle = storeHandles.peerDbaseFolderHandle;
-                    console.log('AppContext - initializeMetaMaskConnection - peerStoreHandle: ',peerStoreHandle);
                     setPeerStoreFolder(peerStoreHandle);
                 }
             }
@@ -100,8 +96,6 @@ const AppProvider = ({ children }) => {
             setLocalStoreFolder(dbaseLocalFolderHandle);
             setPeerStoreFolder(dbasePeerFolderHandle);
 
-            console.log(`AppContext - handleSetLocalStore - dbase Folder Created: ${dbaseLocalFolderHandle.name}`);
-            console.log(`AppContext - handleSetLocalStore - dbase Peer Folder Created: ${dbasePeerFolderHandle.name}`);
         } catch (error) {
             console.error("AppContext - handleSetLocalStore - Error: ", error);
         }
