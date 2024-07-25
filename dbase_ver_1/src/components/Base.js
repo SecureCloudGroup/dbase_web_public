@@ -83,7 +83,7 @@ const Base = ({ children }) => {
         <div className={`background-wrapper ${themeClass}-body`}>
             <nav className={`navbar navbar-expand-lg ${themeClass}-navbar`}>
                 <div className="container-fluid">
-                    <Link className={`navbar-brand ${themeClass}-text`} to="/">dBase NEW NEW NEW</Link>
+                    <Link className={`navbar-brand ${themeClass}-text`} to="/">dBase</Link>
                     <div className="collapse navbar-collapse" id="navbarNav">
                         <ul className="navbar-nav">
                             <li className="nav-item">
@@ -117,7 +117,8 @@ const Base = ({ children }) => {
                                 justify-content: center;
                                 align-items: center;
                                 color: white;
-                                margin-left: 10px;
+                                margin-left: 0px;
+                                margin-right: 10px;
                                 font-size: 12px;
                             }
                             .connected {
@@ -134,7 +135,7 @@ const Base = ({ children }) => {
                             }
                             .indicators {
                                 display: flex;
-                                gap: 10px;
+                                gap: 0px;
                             }
                             `}
                         </style>

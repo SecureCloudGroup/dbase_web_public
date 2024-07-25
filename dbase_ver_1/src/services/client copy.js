@@ -11,8 +11,9 @@ let peerConnections = {};
 
 const log = console.log;
 const server_address = 'api.securecloudgroup.com';
-const turn_api = '725649c5ea4be63aff9781ecf3f1d69cab36';  // handle private later...
+const turn_api = '725649c5ea4be63aff9781ecf3f1d69cab36';  // handle private later... Move to server w/auth
 let wsReadyPromise;
+
 
 const fetchTurnCredentials = async () => {
     try {
@@ -88,6 +89,7 @@ const initializeWebSocket = (peerId, setWsConnected, setReadyToCommunicate) => {
     });
 };
 
+// NOTE: remove 'setReadyToCommunicate'
 export const initializeWebRTC = async (currentLocalPeerId, setWsConnected, setReadyToCommunicate) => {
     myLocalPeerId = currentLocalPeerId;
     log('client - initializeWebRTC - Initializing WebRTC for peer:', myLocalPeerId);
@@ -100,12 +102,12 @@ export const initializeWebRTC = async (currentLocalPeerId, setWsConnected, setRe
     }
 };
 
-export const setTargetPeerId = (targetId, setReadyToCommunicate) => {
+export const setTargetPeerId = (targetId, setReadyToCommunicate, peerStoreFolder) => {
     targetPeerId = targetId;
     log('client - setTargetPeerId - targetPeerId set to:', targetPeerId);
     if (myLocalPeerId && targetPeerId) {
         log('client - setTargetPeerId - Both peer IDs set, setting up WebRTC');
-        setupWebRTC(setReadyToCommunicate);
+        setupWebRTC(setReadyToCommunicate, peerStoreFolder);
     }
 };
 
@@ -159,9 +161,8 @@ const setupWebRTC = async (setReadyToCommunicate) => {
         log('client - localConnection.oniceconnectionstatechange - ICE connection state change:', localConnection.iceConnectionState);
         if (localConnection.iceConnectionState === 'failed' || localConnection.iceConnectionState === 'disconnected') {
             log('client - localConnection.oniceconnectionstatechange - Connection failed or disconnected');
-            if (typeof setReadyToCommunicate === 'function') {
-                setReadyToCommunicate(false);
-            }
+            setReadyToCommunicate(false);
+            // log('client - localConnection - readyToCommunicate: ',readyToCommunicate);
         }
     };
 
@@ -269,9 +270,7 @@ const handleSendChannelStatusChange = async (setReadyToCommunicate) => {
     if (sendChannel) {
         const state = sendChannel.readyState;
         log('client - handleSendChannelStatusChange - Send channel state is:', state);
-        if (typeof setReadyToCommunicate === 'function') {
-            setReadyToCommunicate(state === 'open');
-        }
+        setReadyToCommunicate(state === 'open');
     }
 };
 
@@ -279,9 +278,7 @@ const handleReceiveChannelStatusChange = async (setReadyToCommunicate) => {
     if (receiveChannel) {
         const state = receiveChannel.readyState;
         log('client - handleReceiveChannelStatusChange - Receive channel state is:', state);
-        if (typeof setReadyToCommunicate === 'function') {
-            setReadyToCommunicate(state === 'open');
-        }
+        setReadyToCommunicate(state === 'open');
     }
 };
 
@@ -289,7 +286,10 @@ let receivedBuffers = {}; // Track received chunks for each key
 let receivedSizes = {}; // Track total sizes of received chunks for each key
 
 const handleReceiveMessage = async (event) => {
-    log('client - handleReceiveMessage - event:', event);
+    log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+    log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+    log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+    log('client - handleReceiveMessage - event...', event);
 
     const storeHandles = await getLocalStoreHandle();
     const peerStoreFolder = storeHandles.peerDbaseFolderHandle;
@@ -322,6 +322,7 @@ const handleReceiveMessage = async (event) => {
 
         // Assuming that each chunk starts with a key that is included in the JSON string, we need to extract it and then assemble the chunks.
         const textDecoder = new TextDecoder();
+        // const textEncoder = new TextEncoder();
 
         // Append the received buffer to the corresponding buffer array for the given key
         if (!receivedBuffers[key]) {
@@ -361,6 +362,40 @@ const handleReceiveMessage = async (event) => {
         log('client - handleReceiveMessage - Unexpected data type received:', receivedData);
     }
 };
+
+// const storeReceivedChunk = async (peerStoreFolder, folderName, chunkData) => {
+//     try {
+//         log('client - storeReceivedChunk - peerStoreFolder: ', peerStoreFolder);
+//         log('client - storeReceivedChunk - folderName: ', folderName);
+//         log('client - storeReceivedChunk - chunkData: ', chunkData);
+
+//         if (!peerStoreFolder || !folderName || !chunkData) {
+//             throw new Error('Invalid input parameters');
+//         }
+
+//         const directoryHandle = await peerStoreFolder.getDirectoryHandle(folderName, { create: true });
+//         log('client - storeReceivedChunk - directoryHandle: ', directoryHandle);
+
+//         const { chunkIndex, chunkCID, encryptedChunk } = chunkData;
+//         log('client - storeReceivedChunk - chunkIndex: ', chunkIndex);
+//         log('client - storeReceivedChunk - chunkCID: ', chunkCID);
+//         log('client - storeReceivedChunk - encryptedChunk: ', encryptedChunk);
+
+//         if (!chunkCID || !encryptedChunk) {
+//             throw new Error('Invalid chunk data');
+//         }
+
+//         const chunkFileHandle = await directoryHandle.getFileHandle(chunkCID, { create: true });
+//         log('client - storeReceivedChunk - chunkFileHandle: ', chunkFileHandle);
+
+//         const writableStream = await chunkFileHandle.createWritable();
+//         await writableStream.write(new Blob([JSON.stringify(encryptedChunk)], { type: 'application/json' }));
+//         await writableStream.close();
+//         log('client - storeReceivedChunk - writableStream closed...');
+//     } catch (error) {
+//         log('client - storeReceivedChunk - Error storing received chunk:', error);
+//     }
+// };
 
 const storeReceivedChunk = async (peerStoreFolder, folderName, chunkData) => {
     try {
@@ -416,6 +451,23 @@ const storeReceivedChunk = async (peerStoreFolder, folderName, chunkData) => {
         log('client - storeReceivedChunk - Error storing received chunk:', error);
     }
 };
+
+
+
+// const encodeFileName = (name) => {
+//     return name
+//         .replace(/\./g, '_dot_')
+//         .replace(/\//g, '_slash_')
+//         .replace(/\\/g, '_backslash_')
+//         .replace(/\?/g, '_question_')
+//         .replace(/%/g, '_percent_')
+//         .replace(/\*/g, '_asterisk_')
+//         .replace(/:/g, '_colon_')
+//         .replace(/\|/g, '_pipe_')
+//         .replace(/"/g, '_quote_')
+//         .replace(/</g, '_lt_')
+//         .replace(/>/g, '_gt_');
+// };
 
 const processPendingIceCandidates = async (source_id) => {
     log('client - processPendingIceCandidates - Processing pending ICE candidates for:', source_id);
