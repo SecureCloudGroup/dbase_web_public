@@ -76,7 +76,7 @@ const Base = ({ children }) => {
         <div className={`background-wrapper ${themeClass}-body`}>
             <nav className={`navbar navbar-expand-lg ${themeClass}-navbar`}>
                 <div className="container-fluid">
-                    <Link className={`navbar-brand ${themeClass}-text`} to="/">dBase_v3</Link>
+                    <Link className={`navbar-brand ${themeClass}-text`} to="/">dBase</Link>
                     <div className="collapse navbar-collapse" id="navbarNav">
                         <ul className="navbar-nav">
                             <li className="nav-item">
