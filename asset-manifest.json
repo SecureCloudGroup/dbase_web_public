@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/SecureCloudGroup/dbase_web_public/static/css/main.3b18242f.css",
-    "main.js": "/SecureCloudGroup/dbase_web_public/static/js/main.e76306a9.js",
-    "index.html": "/SecureCloudGroup/dbase_web_public/index.html",
-    "main.3b18242f.css.map": "/SecureCloudGroup/dbase_web_public/static/css/main.3b18242f.css.map",
-    "main.e76306a9.js.map": "/SecureCloudGroup/dbase_web_public/static/js/main.e76306a9.js.map"
+    "main.css": "/dbase_web_public/static/css/main.3b18242f.css",
+    "main.js": "/dbase_web_public/static/js/main.e76306a9.js",
+    "index.html": "/dbase_web_public/index.html",
+    "main.3b18242f.css.map": "/dbase_web_public/static/css/main.3b18242f.css.map",
+    "main.e76306a9.js.map": "/dbase_web_public/static/js/main.e76306a9.js.map"
   },
   "entrypoints": [
     "static/css/main.3b18242f.css",
