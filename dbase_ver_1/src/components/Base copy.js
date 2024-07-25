@@ -21,9 +21,7 @@ const Base = ({ children }) => {
         setBNodeId,
         setIsRegistered,
         useLightTheme,
-        toggleTheme,
-        readyToCommunicate,
-        wsConnected
+        toggleTheme
     } = useContext(AppContext);
 
     const [showModal, setShowModal] = useState(false);
@@ -74,16 +72,11 @@ const Base = ({ children }) => {
 
     const themeClass = useLightTheme ? 'light-theme' : 'dark-theme';
 
-    const indicatorConnectedColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
-    const indicatorDisconnectedColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
-    const indicatorReadyColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
-    const indicatorNotReadyColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
-
     return (
         <div className={`background-wrapper ${themeClass}-body`}>
             <nav className={`navbar navbar-expand-lg ${themeClass}-navbar`}>
                 <div className="container-fluid">
-                    <Link className={`navbar-brand ${themeClass}-text`} to="/">dBase NEW NEW NEW</Link>
+                    <Link className={`navbar-brand ${themeClass}-text`} to="/">dBase</Link>
                     <div className="collapse navbar-collapse" id="navbarNav">
                         <ul className="navbar-nav">
                             <li className="nav-item">
@@ -107,51 +100,20 @@ const Base = ({ children }) => {
                         </ul>
                     </div>
                     <div className="ms-auto d-flex align-items-center">
-                        <style>
-                            {`
-                            .webrtc-status-circle {
-                                width: 40px;
-                                height: 40px;
-                                border-radius: 50%;
-                                display: flex;
-                                justify-content: center;
-                                align-items: center;
-                                color: white;
-                                margin-left: 10px;
-                                font-size: 12px;
-                            }
-                            .connected {
-                                background-color: ${indicatorConnectedColor};
-                            }
-                            .disconnected {
-                                background-color: ${indicatorDisconnectedColor};
-                            }
-                            .ready {
-                                background-color: ${indicatorReadyColor};
-                            }
-                            .not-ready {
-                                background-color: ${indicatorNotReadyColor};
-                            }
-                            .indicators {
-                                display: flex;
-                                gap: 10px;
-                            }
-                            `}
-                        </style>
-                        <div className="indicators">
-                            <div className={`webrtc-status-circle ${wsConnected ? 'connected' : 'disconnected'}`}>
-                                WS
-                            </div>
-                            <div className={`webrtc-status-circle ${readyToCommunicate ? 'ready' : 'not-ready'}`}>
-                                CHNL
-                            </div>
-                        </div>
-                        <div className={`toggle-button ${themeClass}-toggle-button`} onClick={toggleTheme}>
+                        <div
+                            className={`toggle-button ${themeClass}-toggle-button`}
+                            onClick={toggleTheme}
+                        >
+                            {/* <FontAwesomeIcon icon={faIdBadge} /> */}
                             <a style={{ color: 'white', fontSize: '10px' }}>theme</a>
+
                         </div>
                         {isConnected ? (
                             <>
-                                {verificationFailed ? null : (
+                                {verificationFailed ? (
+                                    {/* <button className="btn btn-warning me-2" onClick={handleVerifyRegistration}>Sign Challenge</button> */}
+                                    
+                                ) : (
                                     <>
                                         <div
                                             ref={bnodeidRef}

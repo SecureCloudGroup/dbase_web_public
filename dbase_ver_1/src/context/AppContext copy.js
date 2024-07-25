@@ -15,7 +15,6 @@ const AppProvider = ({ children }) => {
     const [peerStoreFolder, setPeerStoreFolder] = useState('');
     const [readyToCommunicate, setReadyToCommunicate] = useState(false);
     const [useLightTheme, setUseLightTheme] = useState(false); // Default to dark theme
-    const [wsConnected, setWsConnected] = useState(false);
 
     const initializeMetaMaskConnection = useCallback(async () => {
         try {
@@ -136,9 +135,7 @@ const AppProvider = ({ children }) => {
                 setBNodeId,
                 setIsRegistered,
                 useLightTheme,
-                toggleTheme,
-                wsConnected,
-                setWsConnected
+                toggleTheme, // Provide toggle theme function
             }}
         >
             {children}

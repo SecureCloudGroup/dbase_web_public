@@ -13,6 +13,10 @@ const PeerData = () => {
     const themeClass = useLightTheme ? 'light-theme' : 'dark-theme';
     const tableBackgroundColor = useLightTheme ? '#FFFFFF' : '#2C3531';
     const tableTextColor = useLightTheme ? '#3D52A0' : '#D1E8E2';
+    const indicatorConnectedColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
+    const indicatorDisconnectedColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
+    const indicatorReadyColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
+    const indicatorNotReadyColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
 
     const [peerFiles, setPeerFiles] = useState([]);
     const [peerFileCount, setPeerFileCount] = useState(0);
@@ -23,11 +27,12 @@ const PeerData = () => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [targetPeerId, setTargetPeerIdState] = useState('');
     const [message, setMessage] = useState('');
+    const [wsConnected, setWsConnected] = useState(false);
     const [peerStoreFolder, setPeerStoreFolder] = useState(null);
 
     useEffect(() => {
         if (bnodeid) {
-            initializeWebRTC(bnodeid, setReadyToCommunicate);
+            initializeWebRTC(bnodeid, setWsConnected, setReadyToCommunicate);
         }
     }, [bnodeid]);
 
@@ -128,6 +133,49 @@ const PeerData = () => {
 
     return (
         <div className={themeClass}>
+            <style>
+                {`
+                .webrtc-status-circle {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: white;
+                    margin-left: 10px;
+                    font-size: 12px;
+                }
+
+                .connected {
+                    background-color: ${indicatorConnectedColor};
+                }
+
+                .disconnected {
+                    background-color: ${indicatorDisconnectedColor};
+                }
+
+                .ready {
+                    background-color: ${indicatorReadyColor};
+                }
+
+                .not-ready {
+                    background-color: ${indicatorNotReadyColor};
+                }
+
+                .peer-info {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                }
+
+                .indicators {
+                    display: flex;
+                    gap: 10px;
+                }
+                `}
+            </style>
             <div className="row mt-4">
                 <div className="col-12">
                     <div className={`d-flex flex-column ml-12 ${themeClass}-text`}>
@@ -135,6 +183,14 @@ const PeerData = () => {
                             <div>
                                 <span className="me-3" style={{ minWidth: '150px' }}>My BnodeId (peer id):</span>
                                 <a>{bnodeid}</a>
+                            </div>
+                            <div className="indicators">
+                                <div className={`webrtc-status-circle ${wsConnected ? 'connected' : 'disconnected'}`}>
+                                    WS
+                                </div>
+                                <div className={`webrtc-status-circle ${readyToCommunicate ? 'ready' : 'not-ready'}`}>
+                                    CHNL
+                                </div>
                             </div>
                         </div>
                         <div className="d-flex align-items-center">
