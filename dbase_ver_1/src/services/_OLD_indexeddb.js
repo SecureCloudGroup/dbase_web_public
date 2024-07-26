@@ -31,7 +31,6 @@ export const checkDbOpen = async () => {
     return isOpen_my_file_meta_data_db && isOpen_my_files_db;
 };
 
-
 export const saveLocalStoreHandle = async (bnodeid, localStoreHandle, localFolderName, localDbaseFolderHandle, peerStoreHandle, peerFolderName, peerDbaseFolderHandle) => {
     const existingEntry = await my_file_meta_data_db.LOCAL_STORE.where({ bnodeid }).last();
     
@@ -60,33 +59,6 @@ export const saveLocalStoreHandle = async (bnodeid, localStoreHandle, localFolde
     }
 };
 
-
-// export const getLocalStoreHandle = async (type) => {
-//     console.log('indexeddb - getLocalStoreHandle - type: ', type);
-//     if (type != 'local' || type != 'peer') {
-//         console.log('indexeddb - getLocalStoreHandle - ERROR: you must set type');
-//         return null;
-//     }
-//     const localStoreEntries = await my_file_meta_data_db.LOCAL_STORE.toArray();
-//     console.log('indexeddb - getLocalStoreHandle - localStoreEntries: ', localStoreEntries);
-    
-//     if (localStoreEntries.length === 0) {
-//         return null;
-//     }
-
-//     const localStoreEntry = localStoreEntries[localStoreEntries.length - 1]; // Get the last entry
-//     console.log('indexeddb - getLocalStoreHandle - localStoreEntry: ', localStoreEntry);
-
-//     if (type === 'local') {
-//         console.log('indexeddb - getLocalStoreHandle - localDbaseFolderHandle: ', localStoreEntry.localDbaseFolderHandle);
-//         return localStoreEntry.localDbaseFolderHandle;
-//     } else if (type === 'peer') {
-//         console.log('indexeddb - getLocalStoreHandle - peerDbaseFolderHandle: ', localStoreEntry.peerDbaseFolderHandle);
-//         return localStoreEntry.peerDbaseFolderHandle;
-//     }
-//     console.log('indexeddb - getLocalStoreHandle - ERROR');
-//     return null;
-// };
 export const getLocalStoreHandle = async () => {
     console.log('indexeddb - getLocalStoreHandle - Called... ');
     const localStoreEntries = await my_file_meta_data_db.LOCAL_STORE.toArray();
@@ -151,24 +123,11 @@ export const decodeFileName = (encodedName) => {
 
 const saveChunkToLocalStore = async (fileName, chunkIndex, encryptedChunk, localStoreHandle) => {
     try {
-        // console.log("indexeddb - saveChunkToLocalStore - fileName: ",fileName);
-        // console.log("indexeddb - saveChunkToLocalStore - chunkIndex: ",chunkIndex);
-        // console.log("indexeddb - saveChunkToLocalStore - encryptedChunk: ",encryptedChunk);
-        // console.log("indexeddb - saveChunkToLocalStore - localStoreHandle: ",localStoreHandle);
-        // Ensure the 'dbase_local_data_store' directory is created within the localStoreFolder
-        // const mainDirectoryHandle = await localStoreHandle.getDirectoryHandle('dbase_local_data_store', { create: true });
-        // const mainDirectoryHandle = await localStoreHandle.getDirectoryHandle();
-        // console.log("indexeddb - saveChunkToLocalStore - mainDirectoryHandle: ",mainDirectoryHandle);
-        // Ensure the directory for the specific file is created within the 'dbase_local_data_store'
-        // const directoryHandle = await mainDirectoryHandle.getDirectoryHandle(fileName, { create: true });
         const directoryHandle = await localStoreHandle.getDirectoryHandle(fileName, { create: true });
-        // console.log("indexeddb - saveChunkToLocalStore - directoryHandle: ",directoryHandle);
         const fileHandle = await directoryHandle.getFileHandle(`chunk_${chunkIndex}`, { create: true });
-        // console.log("indexeddb - saveChunkToLocalStore - fileHandle: ",fileHandle);
         const writableStream = await fileHandle.createWritable();
         await writableStream.write(new Blob([JSON.stringify(encryptedChunk)], { type: 'application/json' }));
         await writableStream.close();
-        // console.log("Chunk saved to local store: ", fileName, chunkIndex);
     } catch (error) {
         console.error("Error saving chunk to local store: ", error);
     }
@@ -196,7 +155,6 @@ const get_peers_for_dbase_file = async (wallet_address) => {
         return [];
     }
 };
-
 
 export const processAndStoreFile = async (
     bNodeId, 
@@ -481,7 +439,6 @@ export const checkLocalFileExistence = async (localStoreFolder, fileName) => {
         console.log("indexeddb - checkLocalFileExistence - localStoreFolder: ",localStoreFolder);
         console.log("indexeddb - checkLocalFileExistence - fileName: ",fileName);
         const encodedFileName = encodeFileName(fileName);
-        // const directoryName = `dbase_${encodedFileName}`;
         console.log("indexeddb - checkLocalFileExistence - encodedFileName: ",encodedFileName);
         const directoryName = encodedFileName;
         const directoryHandle = await localStoreFolder.getDirectoryHandle(directoryName, { create: false });

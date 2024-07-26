@@ -9,7 +9,7 @@ import { faIdBadge, faFolder, faWallet } from '@fortawesome/free-solid-svg-icons
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../static/css/style.css';
 import { Modal, Button } from 'react-bootstrap';
-import { initializeWebRTC } from '../services/client';  // Import the initializeWebRTC function
+import { initializeWebRTC, setTargetPeerId, sendMessage } from '../services/client';
 
 const Base = ({ children }) => {
     const {
@@ -23,9 +23,9 @@ const Base = ({ children }) => {
         setIsRegistered,
         useLightTheme,
         toggleTheme,
-        readyToCommunicate,
         wsConnected,
         setWsConnected,
+        readyToCommunicate,
         setReadyToCommunicate
     } = useContext(AppContext);
 
@@ -46,6 +46,12 @@ const Base = ({ children }) => {
     const bnodeidRef = useRef(null);
     const localStoreFolderRef = useRef(null);
     const walletConnectedRef = useRef(null);
+
+    useEffect(() => {
+        if (bnodeid) {
+            initializeWebRTC(bnodeid, setWsConnected, setReadyToCommunicate);
+        }
+    }, [bnodeid]);
 
     useEffect(() => {
         if (!isConnected) {
@@ -70,19 +76,12 @@ const Base = ({ children }) => {
         }
     }, [isConnected, bnodeid, setBNodeId, setIsRegistered]);
 
-    useEffect(() => {
-        if (bnodeid) {
-            initializeWebRTC(bnodeid, setWsConnected, setReadyToCommunicate);
-        }
-    }, [bnodeid, setWsConnected, setReadyToCommunicate]);
-
     const handleSetLocalStoreClick = () => {
         handleSetLocalStore();
         handleClose();
     };
 
     const themeClass = useLightTheme ? 'light-theme' : 'dark-theme';
-
     const indicatorConnectedColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
     const indicatorDisconnectedColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
     const indicatorReadyColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
@@ -116,9 +115,8 @@ const Base = ({ children }) => {
                         </ul>
                     </div>
                     <div className="ms-auto d-flex align-items-center">
-                        <div className="indicators">
-                            {/* <a style={{ color: 'white', marginRight: '10px' }}>HERE: {wsConnected.toString()}</a> */}
 
+                        <div className="indicators">
                             <div className={`webrtc-status-circle ${wsConnected ? 'connected' : 'disconnected'}`} style={{ backgroundColor: wsConnected ? indicatorConnectedColor : indicatorDisconnectedColor }}>
                                 WS
                             </div>
@@ -126,13 +124,21 @@ const Base = ({ children }) => {
                                 CHNL
                             </div>
                         </div>
-                        
-                        <div className={`toggle-button ${themeClass}-toggle-button`} onClick={toggleTheme}>
+
+                        <div
+                            className={`toggle-button ${themeClass}-toggle-button`}
+                            onClick={toggleTheme}
+                        >
+                            {/* <FontAwesomeIcon icon={faIdBadge} /> */}
                             <a style={{ color: 'white', fontSize: '10px' }}>theme</a>
+
                         </div>
                         {isConnected ? (
                             <>
-                                {verificationFailed ? null : (
+                                {verificationFailed ? (
+                                    {/* <button className="btn btn-warning me-2" onClick={handleVerifyRegistration}>Sign Challenge</button> */}
+                                    
+                                ) : (
                                     <>
                                         <div
                                             ref={bnodeidRef}

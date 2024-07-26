@@ -8,14 +8,15 @@ const AppContext = createContext();
 
 const AppProvider = ({ children }) => {
     const [isConnected, setIsConnected] = useState(false);
-    const [verificationFailed, setVerificationFailed] = useState(false);
     const [bnodeid, setBNodeId] = useState('');
     const [isRegistered, setIsRegistered] = useState(false);
-    const [localStoreFolder, setLocalStoreFolder] = useState('');
-    const [peerStoreFolder, setPeerStoreFolder] = useState('');
+    const [localStoreFolder, setLocalStoreFolder] = useState(null);
+    const [peerStoreFolder, setPeerStoreFolder] = useState(null);
     const [readyToCommunicate, setReadyToCommunicate] = useState(false);
     const [useLightTheme, setUseLightTheme] = useState(false); // Default to dark theme
     const [wsConnected, setWsConnected] = useState(false);
+    const [newMessage, setNewMessage] = useState(null);
+    const [newDataMessage, setNewDataMessage] = useState(null);
 
     const initializeMetaMaskConnection = useCallback(async () => {
         try {
@@ -28,11 +29,8 @@ const AppProvider = ({ children }) => {
 
                 if (isRegistered && bnode_id) {
                     const storeHandles = await getLocalStoreHandle();
-                    
-                    const localStoreHandle = storeHandles.localDbaseFolderHandle;
-                    setLocalStoreFolder(localStoreHandle);
-                    const peerStoreHandle = storeHandles.peerDbaseFolderHandle;
-                    setPeerStoreFolder(peerStoreHandle);
+                    setLocalStoreFolder(storeHandles.localDbaseFolderHandle);
+                    setPeerStoreFolder(storeHandles.peerDbaseFolderHandle);
                 }
             }
         } catch (error) {
@@ -43,11 +41,19 @@ const AppProvider = ({ children }) => {
     useEffect(() => {
         const savedLocalStore = localStorage.getItem('localStoreFolder');
         if (savedLocalStore) {
-            setLocalStoreFolder(JSON.parse(savedLocalStore));
+            try {
+                setLocalStoreFolder(JSON.parse(savedLocalStore));
+            } catch (error) {
+                console.error('Error parsing localStoreFolder from localStorage:', error);
+            }
         }
         const savedPeerStore = localStorage.getItem('peerStoreFolder');
         if (savedPeerStore) {
-            setPeerStoreFolder(JSON.parse(savedPeerStore));
+            try {
+                setPeerStoreFolder(JSON.parse(savedPeerStore));
+            } catch (error) {
+                console.error('Error parsing peerStoreFolder from localStorage:', error);
+            }
         }
         initializeMetaMaskConnection();
     }, [initializeMetaMaskConnection]);
@@ -62,11 +68,8 @@ const AppProvider = ({ children }) => {
                 setIsRegistered(isRegistered);
                 if (isRegistered && bnode_id) {
                     const storeHandles = await getLocalStoreHandle();
-                    
-                    const localStoreHandle = storeHandles.localDbaseFolderHandle;
-                    setLocalStoreFolder(localStoreHandle);
-                    const peerStoreHandle = storeHandles.peerDbaseFolderHandle;
-                    setPeerStoreFolder(peerStoreHandle);
+                    setLocalStoreFolder(storeHandles.localDbaseFolderHandle);
+                    setPeerStoreFolder(storeHandles.peerDbaseFolderHandle);
                 }
             }
         } catch (error) {
@@ -85,17 +88,16 @@ const AppProvider = ({ children }) => {
                 mode: 'readwrite'
             });
 
-            const dbaseLocalFolderName = 'dbase_local_data_store'; 
+            const dbaseLocalFolderName = 'dbase_local_data_store';
             const dbaseLocalFolderHandle = await newLocalStoreFolderHandle.getDirectoryHandle(dbaseLocalFolderName, { create: true });
-            
-            const dbasePeerFolderName = 'dbase_peer_data_store'; 
+
+            const dbasePeerFolderName = 'dbase_peer_data_store';
             const dbasePeerFolderHandle = await newLocalStoreFolderHandle.getDirectoryHandle(dbasePeerFolderName, { create: true });
 
             await saveLocalStoreHandle(bnodeid, newLocalStoreFolderHandle, dbaseLocalFolderName, dbaseLocalFolderHandle, newLocalStoreFolderHandle, dbasePeerFolderName, dbasePeerFolderHandle);
-            
+
             setLocalStoreFolder(dbaseLocalFolderHandle);
             setPeerStoreFolder(dbasePeerFolderHandle);
-
         } catch (error) {
             console.error("AppContext - handleSetLocalStore - Error: ", error);
         }
@@ -118,7 +120,6 @@ const AppProvider = ({ children }) => {
         <AppContext.Provider
             value={{
                 isConnected,
-                verificationFailed,
                 bnodeid,
                 isRegistered,
                 localStoreFolder,
@@ -132,7 +133,11 @@ const AppProvider = ({ children }) => {
                 useLightTheme,
                 toggleTheme,
                 wsConnected,
-                setWsConnected
+                setWsConnected,
+                newMessage,
+                setNewMessage,
+                newDataMessage,
+                setNewDataMessage
             }}
         >
             {children}

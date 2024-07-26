@@ -14,6 +14,7 @@
     "assert": "^2.1.0",
     "base62": "^2.0.2",
     "bootstrap": "^5.3.3",
+    "browser-fs-access": "^0.35.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "dexie": "^4.0.7",
