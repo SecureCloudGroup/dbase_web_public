@@ -93,6 +93,7 @@ export const getLocalStoreHandle = async () => {
     console.log('indexeddb - getLocalStoreHandle - localStoreEntries: ', localStoreEntries);
     
     if (localStoreEntries.length === 0) {
+        console.log('indexeddb - getLocalStoreHandle - localStoreEntries.length === 0');
         return null;
     } else {
         const localStoreEntry = localStoreEntries[localStoreEntries.length - 1]; // Get the last entry

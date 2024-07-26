@@ -7,7 +7,7 @@ import {
     initializeWebRTC,
     setTargetPeerId,
     sendMessage,
-    getReceiveChannel,
+    // getReceiveChannel,
     setHandleTextMessageCallback,
     setHandleDataMessageCallback
 } from '../services/client';
@@ -141,6 +141,7 @@ const AppProvider = ({ children }) => {
 
     const handleNewMessage = useCallback((message) => {
         setNewMessage(message);
+        console.log("AppContext - handleNewMessage - message: ",message);
         setMessageType('txt');
         setMessageContent(message);
         setMessageCircleStatus(true);
@@ -152,8 +153,9 @@ const AppProvider = ({ children }) => {
 
     const handleNewDataMessage = useCallback((dataMessage) => {
         setNewDataMessage(dataMessage);
+        console.log("AppContext - handleNewDataMessage - dataMessage: ",dataMessage);
         setMessageType('data');
-        setMessageContent(dataMessage.fileName);
+        setMessageContent(dataMessage);
         setMessageCircleStatus(true);
     }, []);
     
@@ -222,6 +224,7 @@ const AppProvider = ({ children }) => {
                 setNewDataMessage,
                 setTargetPeerId,
                 sendMessage,
+                setTargetPeerId,
                 messageType,
                 messageContent,
                 messageCircleStatus,

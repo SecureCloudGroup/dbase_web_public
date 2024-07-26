@@ -27,7 +27,7 @@ const Base = ({ children }) => {
         readyToCommunicate,
         newMessage,
         newDataMessage,
-        setReadyToCommunicate,
+        // setReadyToCommunicate,
         messageType,
         messageContent,
         messageCircleStatus,
@@ -152,7 +152,7 @@ const Base = ({ children }) => {
                             </div> */}
 
                             {messageCircleStatus && (
-                                <div className="webrtc-status-circle new-message" onClick={handleMessageCircleClick}>
+                                <div className="webrtc-status-circle new-message" style={{ backgroundColor: indicatorConnectedColor }} onClick={handleMessageCircleClick}>
                                     {messageType}
                                 </div>
                             )}

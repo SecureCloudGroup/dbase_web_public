@@ -9,14 +9,24 @@ import { deriveKeyFromSignature, decodeFileName, getLocalStoreHandle } from '../
 import { initializeWebRTC, setTargetPeerId, sendMessage } from '../services/client';
 
 const PeerData = () => {
-    const { bnodeid, readyToCommunicate, setReadyToCommunicate, useLightTheme } = useContext(AppContext);
+    const { 
+        bnodeid, 
+        readyToCommunicate, 
+        setReadyToCommunicate, 
+        useLightTheme,
+        // newMessage,
+        // messageType,
+        // messageContent,
+        // messageCircleStatus,
+        // setMessageCircleStatus
+    } = useContext(AppContext);
     const themeClass = useLightTheme ? 'light-theme' : 'dark-theme';
     const tableBackgroundColor = useLightTheme ? '#FFFFFF' : '#2C3531';
     const tableTextColor = useLightTheme ? '#3D52A0' : '#D1E8E2';
-    const indicatorConnectedColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
-    const indicatorDisconnectedColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
-    const indicatorReadyColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
-    const indicatorNotReadyColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
+    // const indicatorConnectedColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
+    // const indicatorDisconnectedColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
+    // const indicatorReadyColor = useLightTheme ? '#2ECC71' : '#27AE60'; // Green
+    // const indicatorNotReadyColor = useLightTheme ? '#E74C3C' : '#C0392B'; // Red
 
     const [peerFiles, setPeerFiles] = useState([]);
     const [peerFileCount, setPeerFileCount] = useState(0);
@@ -52,8 +62,8 @@ const PeerData = () => {
     useEffect(() => {
         async function fetchPeerData() {
             console.log("PeerData - fetchPeerData called...");
-
             const storeHandles = await getLocalStoreHandle();
+            console.log("PeerData - fetchPeerData - storeHandles: ",storeHandles);
             const fetchedPeerStoreFolder = storeHandles.peerDbaseFolderHandle;
             console.log("PeerData - fetchedPeerStoreFolder: ", fetchedPeerStoreFolder);
             setPeerStoreFolder(fetchedPeerStoreFolder);
@@ -62,6 +72,7 @@ const PeerData = () => {
                 const files = await getAggregatedPeerFiles(fetchedPeerStoreFolder);
                 setPeerFiles(files);
                 setPeerFileCount(files.length);
+                console.log("PeerData - fetchedPeerStoreFolder - files: ",files);
             }
         }
         fetchPeerData();

@@ -14,6 +14,7 @@ let peerConnections = {};
 
 let handleTextMessageCallback;
 let handleDataMessageCallback;
+let pendingIceCandidates = {};
 
 const log = console.log;
 const server_address = 'api.securecloudgroup.com';
@@ -146,16 +147,89 @@ export const setHandleDataMessageCallback = (callback) => {
     handleDataMessageCallback = callback;
 };
 
-export const sendMessage = (message) => {
+// export const sendMessage = (message) => {
+//     log('client - sendMessage - message:', message);
+//     const msg = JSON.stringify({ type: 'text', content: message });
+//     if (sendChannel && sendChannel.readyState === 'open') {
+//         sendChannel.send(msg);
+//         log('client - sendMessage - Sent message:', message);
+//         log('client - sendMessage - Sent msg:', msg);
+//     } else {
+//         log('client - sendMessage - Data channel is not open. Message not sent.');
+//     }
+// };
+
+export const sendMessage = (message, type = 'text') => {
     log('client - sendMessage - message:', message);
-    const msg = JSON.stringify({ type: 'text', content: message });
+    const msg = JSON.stringify({ type, content: message });
     if (sendChannel && sendChannel.readyState === 'open') {
         sendChannel.send(msg);
         log('client - sendMessage - Sent message:', message);
+        log('client - sendMessage - Sent msg:', msg);
     } else {
         log('client - sendMessage - Data channel is not open. Message not sent.');
     }
 };
+
+
+// const setupWebRTC = async (setReadyToCommunicate) => {
+//     log('client - setupWebRTC - Starting setup');
+
+//     const iceServers = await fetchTurnCredentials();
+//     log('client - setupWebRTC - iceServers: ', iceServers);
+
+//     localConnection = new RTCPeerConnection({ iceServers });
+//     peerConnections[targetPeerId] = localConnection;
+//     log('client - setupWebRTC - RTCPeerConnection created:', localConnection);
+
+//     sendChannel = localConnection.createDataChannel("fileTransfer");
+//     log('client - setupWebRTC - Data channel created:', sendChannel);
+
+//     sendChannel.onopen = () => handleSendChannelStatusChange(setReadyToCommunicate);
+//     sendChannel.onclose = () => handleSendChannelStatusChange(setReadyToCommunicate);
+//     sendChannel.onerror = (error) => log('client - sendChannel.onerror - Data channel error:', error);
+//     sendChannel.onmessage = (event) => log('client - sendChannel.onmessage - Data channel message received:', event.data);
+
+//     localConnection.ondatachannel = (event) => {
+//         log('client - localConnection.ondatachannel - Data channel received:', event.channel);
+//         receiveChannel = event.channel;
+//         setReceiveChannel(receiveChannel); // Set the receive channel
+//         receiveChannel.onopen = () => handleReceiveChannelStatusChange(setReadyToCommunicate);
+//         receiveChannel.onclose = () => handleReceiveChannelStatusChange(setReadyToCommunicate);
+//         receiveChannel.onerror = (error) => log('client - receiveChannel.onerror - Receive channel error:', error);
+//         receiveChannel.onmessage = (event) => handleReceiveMessage(event);
+//     };
+
+//     localConnection.onicecandidate = (event) => {
+//         if (event.candidate) {
+//             log('client - localConnection.onicecandidate - ICE candidate generated:', event.candidate);
+//             sendSignalMessage({ candidate: event.candidate, target_id: targetPeerId });
+//         }
+//     };
+
+//     localConnection.oniceconnectionstatechange = () => {
+//         log('client - localConnection.oniceconnectionstatechange - ICE connection state change:', localConnection.iceConnectionState);
+//         if (localConnection.iceConnectionState === 'failed' || localConnection.iceConnectionState === 'disconnected') {
+//             log('client - localConnection.oniceconnectionstatechange - Connection failed or disconnected');
+//             setReadyToCommunicate(false);
+//             // log('client - localConnection - readyToCommunicate: ',readyToCommunicate);
+//         }
+//     };
+
+//     localConnection.onicegatheringstatechange = () => log('client - localConnection.onicegatheringstatechange - ICE gathering state change:', localConnection.iceGatheringState);
+
+//     localConnection.onsignalingstatechange = () => log('client - localConnection.onsignalingstatechange - Signaling state change:', localConnection.signalingState);
+
+//     try {
+//         const offer = await localConnection.createOffer();
+//         log('client - setupWebRTC - Creating offer:', offer);
+//         await localConnection.setLocalDescription(offer);
+//         log('client - setupWebRTC - Local description set:', localConnection.localDescription);
+//         sendSignalMessage({ offer: localConnection.localDescription, target_id: targetPeerId });
+//     } catch (error) {
+//         log('client - setupWebRTC - Error creating offer:', error);
+//     }
+// };
 
 const setupWebRTC = async (setReadyToCommunicate) => {
     log('client - setupWebRTC - Starting setup');
@@ -197,7 +271,6 @@ const setupWebRTC = async (setReadyToCommunicate) => {
         if (localConnection.iceConnectionState === 'failed' || localConnection.iceConnectionState === 'disconnected') {
             log('client - localConnection.oniceconnectionstatechange - Connection failed or disconnected');
             setReadyToCommunicate(false);
-            // log('client - localConnection - readyToCommunicate: ',readyToCommunicate);
         }
     };
 
@@ -216,6 +289,9 @@ const setupWebRTC = async (setReadyToCommunicate) => {
     }
 };
 
+
+
+
 const handleOffer = async (offer, source_id, setReadyToCommunicate) => {
     log('client - handleOffer - offer:', offer);
     log('client - handleOffer - source_id:', source_id);
@@ -225,6 +301,14 @@ const handleOffer = async (offer, source_id, setReadyToCommunicate) => {
 
     peerConnections[source_id] = peerConnection;
     log('client - handleOffer - RTCPeerConnection created for handling offer:', peerConnection);
+
+    // Handle pending ICE candidates
+    if (pendingIceCandidates[source_id]) {
+        pendingIceCandidates[source_id].forEach(candidate => {
+            handleCandidate(candidate, source_id);
+        });
+        delete pendingIceCandidates[source_id];
+    }
 
     peerConnection.ondatachannel = (event) => {
         log('client - handleOffer - Data channel received:', event.channel);
@@ -283,7 +367,12 @@ const handleCandidate = async (candidate, source_id) => {
     try {
         const peerConnection = peerConnections[source_id];
         if (!peerConnection) {
-            throw new Error(`PeerConnection not found for source_id: ${source_id}`);
+            if (!pendingIceCandidates[source_id]) {
+                pendingIceCandidates[source_id] = [];
+            }
+            pendingIceCandidates[source_id].push(candidate);
+            log(`client - handleCandidate - PeerConnection not found for source_id: ${source_id}. ICE candidate queued.`);
+            return;
         }
         await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         log('client - handleCandidate - ICE candidate added:', candidate);
@@ -399,20 +488,84 @@ let receivedSizes = {}; // Track total sizes of received chunks for each key
 //     }
 // };
 
+
+
 const handleReceiveMessage = async (event) => {
     log('client - handleReceiveMessage - event...', event);
-
-    const message = JSON.parse(event.data);
-    log('client - handleReceiveMessage - Received message:', message);
-
-    if (message.type === 'text') {
-        handleTextMessageCallback(message.content);
-    } else if (message.type === 'data') {
-        handleDataMessageCallback(message.content);
-    } else {
-        log('client - handleReceiveMessage - Unknown message type:', message.type);
+    let message;
+    try {
+        if (event.data instanceof ArrayBuffer) {
+            // DATA
+            const storeHandles = await getLocalStoreHandle();
+            const peerStoreFolder = storeHandles.peerDbaseFolderHandle;
+            log('client - handleReceiveMessage - peerStoreFolder:', peerStoreFolder);
+            const receivedData = event.data
+            const receivedBuffer = new Uint8Array(receivedData);
+            log('client - handleReceiveMessage - Size of received buffer (bytes):', receivedBuffer.length);
+            // Try to decode the buffer to extract key information
+            let key;
+            try {
+                const kvString = new TextDecoder().decode(receivedBuffer);
+                const kv = JSON.parse(kvString);
+                key = kv.key;
+                // Log that we have received a new key-value pair
+                log('client - handleReceiveMessage - Received key-value pair:', kv);
+                log('client - handleReceiveMessage - key:', key);
+                // Store the received chunk directly if it's not part of a larger message
+                await storeReceivedChunk(peerStoreFolder, kv.key, kv.value);
+                return;
+            } catch (e) {
+                // If parsing fails, it means the buffer is a part of a larger message
+                log('client - handleReceiveMessage - Received buffer is part of a larger message.');
+            }
+            // Assuming that each chunk starts with a key that is included in the JSON string, we need to extract it and then assemble the chunks.
+            const textDecoder = new TextDecoder();
+            // Append the received buffer to the corresponding buffer array for the given key
+            if (!receivedBuffers[key]) {
+                receivedBuffers[key] = [];
+                receivedSizes[key] = 0;
+            }
+            receivedBuffers[key].push(receivedBuffer);
+            receivedSizes[key] += receivedBuffer.length;
+            // Attempt to combine all received chunks
+            const combinedBuffer = new Uint8Array(receivedSizes[key]);
+            let offset = 0;
+            receivedBuffers[key].forEach(buffer => {
+                combinedBuffer.set(buffer, offset);
+                offset += buffer.length;
+            });
+            // Try to decode and parse the combined buffer to check if we have received the complete message
+            try {
+                const combinedKvString = textDecoder.decode(combinedBuffer);
+                const combinedKv = JSON.parse(combinedKvString);
+                log('client - handleReceiveMessage - Successfully assembled key-value pair:', combinedKv);
+                // Store the assembled message
+                await storeReceivedChunk(peerStoreFolder, combinedKv.key, combinedKv.value);
+                // Clear the buffers for this key after successfully processing the complete message
+                delete receivedBuffers[key];
+                delete receivedSizes[key];
+                log('client - handleReceiveMessage - Successfully processed and reset buffers for key:', key);
+            } catch (e) {
+                // Continue to receive more chunks if JSON parsing fails
+                log('client - handleReceiveMessage - Waiting for more chunks to complete the message for key:', key);
+            }
+            log('client - handleReceiveMessage - ArrayBuffer received.');
+            message = JSON.parse(new TextDecoder().decode(event.data));
+            handleDataMessageCallback(message.key);
+            log('client - handleReceiveMessage - Received DATA message:', message.key);
+        } else {
+            // TEXT
+            message = JSON.parse(event.data);
+            handleTextMessageCallback(message.content);
+            log('client - handleReceiveMessage - Received TEXT message:', message);
+        }
+        
+    } catch (error) {
+        log('client - handleReceiveMessage - Error processing message:', error);
     }
 };
+
+
 
 // const handleTextMessage = (text) => {
 //     log('client - handleTextMessage - text:', text);
