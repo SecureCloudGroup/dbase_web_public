@@ -3,6 +3,14 @@ import PropTypes from 'prop-types';
 import { connectMetaMask, isMetaMaskConnected } from '../services/metamask';
 import { checkWalletRegistration } from '../services/registration';
 import { getLocalStoreHandle, saveLocalStoreHandle } from '../services/indexeddb';
+import {
+    initializeWebRTC,
+    setTargetPeerId,
+    sendMessage,
+    getReceiveChannel,
+    setHandleTextMessageCallback,
+    setHandleDataMessageCallback
+} from '../services/client';
 
 const AppContext = createContext();
 
@@ -17,6 +25,9 @@ const AppProvider = ({ children }) => {
     const [wsConnected, setWsConnected] = useState(false);
     const [newMessage, setNewMessage] = useState(null);
     const [newDataMessage, setNewDataMessage] = useState(null);
+    const [messageType, setMessageType] = useState('');
+    const [messageContent, setMessageContent] = useState('');
+    const [messageCircleStatus, setMessageCircleStatus] = useState(false);
 
     const initializeMetaMaskConnection = useCallback(async () => {
         try {
@@ -116,6 +127,77 @@ const AppProvider = ({ children }) => {
         setUseLightTheme(prev => !prev);
     };
 
+    // Initialize WebRTC
+    useEffect(() => {
+        if (bnodeid) {
+            initializeWebRTC(bnodeid, setWsConnected, setReadyToCommunicate);
+        }
+    }, [bnodeid]);
+
+    // Messages (text and data)
+    // const handleNewMessage = useCallback((message) => {
+    //     setNewMessage(message);
+    // }, []);
+
+    const handleNewMessage = useCallback((message) => {
+        setNewMessage(message);
+        setMessageType('txt');
+        setMessageContent(message);
+        setMessageCircleStatus(true);
+    }, []);
+    
+    // const handleNewDataMessage = useCallback((dataMessage) => {
+    //     setNewDataMessage(dataMessage);
+    // }, []);
+
+    const handleNewDataMessage = useCallback((dataMessage) => {
+        setNewDataMessage(dataMessage);
+        setMessageType('data');
+        setMessageContent(dataMessage.fileName);
+        setMessageCircleStatus(true);
+    }, []);
+    
+    // useEffect(() => {
+    //     const handleReceiveMessage = (event) => {
+    //         console.log('client - handleReceiveMessage - event...', event);
+    
+    //         const message = JSON.parse(event.data);
+    //         console.log('client - handleReceiveMessage - Received message:', message);
+    
+    //         if (message.type === 'text') {
+    //             handleNewMessage(message.content);
+    //         } else if (message.type === 'data') {
+    //             handleNewDataMessage(message.content);
+    //         } else {
+    //             console.log('client - handleReceiveMessage - Unknown message type:', message.type);
+    //         }
+    //     };
+    //     receiveChannel.onmessage = handleReceiveMessage;
+    // }, [handleNewMessage, handleNewDataMessage]);
+
+    // useEffect(() => {
+    //     const receiveChannel = getReceiveChannel();
+    //     if (receiveChannel) {
+    //         receiveChannel.onmessage = (event) => {
+    //             const message = JSON.parse(event.data);
+    //             console.log('client - handleReceiveMessage - Received message:', message);
+
+    //             if (message.type === 'text') {
+    //                 handleNewMessage(message.content);
+    //             } else if (message.type === 'data') {
+    //                 handleNewDataMessage(message.content);
+    //             } else {
+    //                 console.log('client - handleReceiveMessage - Unknown message type:', message.type);
+    //             }
+    //         };
+    //     }
+    // }, [handleNewMessage, handleNewDataMessage]);
+
+    useEffect(() => {
+        setHandleTextMessageCallback(handleNewMessage);
+        setHandleDataMessageCallback(handleNewDataMessage);
+    }, [handleNewMessage, handleNewDataMessage]);
+    
     return (
         <AppContext.Provider
             value={{
@@ -137,7 +219,13 @@ const AppProvider = ({ children }) => {
                 newMessage,
                 setNewMessage,
                 newDataMessage,
-                setNewDataMessage
+                setNewDataMessage,
+                setTargetPeerId,
+                sendMessage,
+                messageType,
+                messageContent,
+                messageCircleStatus,
+                setMessageCircleStatus
             }}
         >
             {children}

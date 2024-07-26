@@ -1,5 +1,8 @@
 import { getLocalStoreHandle } from './indexeddb';
 
+// Initialize the context
+// const context = useContext(AppContext);
+
 let localConnection;
 let sendChannel;
 let receiveChannel;
@@ -8,6 +11,9 @@ let myLocalPeerId;
 let targetPeerId;
 let remoteIceCandidates = [];
 let peerConnections = {};
+
+let handleTextMessageCallback;
+let handleDataMessageCallback;
 
 const log = console.log;
 const server_address = 'api.securecloudgroup.com';
@@ -111,14 +117,42 @@ export const setTargetPeerId = (targetId, setReadyToCommunicate, peerStoreFolder
     }
 };
 
+// export const sendMessage = (message) => {
+//     log('client - sendMessage - message:', message);
+//     if (sendChannel && sendChannel.readyState === 'open') {
+//         sendChannel.send(message);
+//         log('client - sendMessage - Sent message:', message);
+//     } else {
+//         log('client - sendMessage - sendChannel:', sendChannel);
+//         log('client - sendMessage - sendChannel.readyState:', sendChannel.readyState);
+//         log('client - sendMessage - Data channel is not open. Message not sent.');
+//     }
+// };
+
+// Messages
+export const setReceiveChannel = (channel) => {
+    receiveChannel = channel;
+};
+
+export const getReceiveChannel = () => {
+    return receiveChannel;
+};
+
+export const setHandleTextMessageCallback = (callback) => {
+    handleTextMessageCallback = callback;
+};
+
+export const setHandleDataMessageCallback = (callback) => {
+    handleDataMessageCallback = callback;
+};
+
 export const sendMessage = (message) => {
     log('client - sendMessage - message:', message);
+    const msg = JSON.stringify({ type: 'text', content: message });
     if (sendChannel && sendChannel.readyState === 'open') {
-        sendChannel.send(message);
+        sendChannel.send(msg);
         log('client - sendMessage - Sent message:', message);
     } else {
-        log('client - sendMessage - sendChannel:', sendChannel);
-        log('client - sendMessage - sendChannel.readyState:', sendChannel.readyState);
         log('client - sendMessage - Data channel is not open. Message not sent.');
     }
 };
@@ -144,6 +178,7 @@ const setupWebRTC = async (setReadyToCommunicate) => {
     localConnection.ondatachannel = (event) => {
         log('client - localConnection.ondatachannel - Data channel received:', event.channel);
         receiveChannel = event.channel;
+        setReceiveChannel(receiveChannel); // Set the receive channel
         receiveChannel.onopen = () => handleReceiveChannelStatusChange(setReadyToCommunicate);
         receiveChannel.onclose = () => handleReceiveChannelStatusChange(setReadyToCommunicate);
         receiveChannel.onerror = (error) => log('client - receiveChannel.onerror - Receive channel error:', error);
@@ -194,6 +229,7 @@ const handleOffer = async (offer, source_id, setReadyToCommunicate) => {
     peerConnection.ondatachannel = (event) => {
         log('client - handleOffer - Data channel received:', event.channel);
         receiveChannel = event.channel;
+        setReceiveChannel(receiveChannel); // Set the receive channel
         receiveChannel.onopen = () => handleReceiveChannelStatusChange(setReadyToCommunicate);
         receiveChannel.onclose = () => handleReceiveChannelStatusChange(setReadyToCommunicate);
         receiveChannel.onerror = (error) => log('client - receiveChannel.onerror - Receive channel error:', error);
@@ -285,83 +321,266 @@ const handleReceiveChannelStatusChange = async (setReadyToCommunicate) => {
 let receivedBuffers = {}; // Track received chunks for each key
 let receivedSizes = {}; // Track total sizes of received chunks for each key
 
+// const handleReceiveMessage = async (event) => {
+//     log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+//     log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+//     log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+//     log('client - handleReceiveMessage - event...', event);
+
+//     const storeHandles = await getLocalStoreHandle();
+//     const peerStoreFolder = storeHandles.peerDbaseFolderHandle;
+//     log('client - handleReceiveMessage - peerStoreFolder:', peerStoreFolder);
+
+//     const receivedData = event.data;
+//     if (receivedData instanceof ArrayBuffer) {
+//         const receivedBuffer = new Uint8Array(receivedData);
+//         log('client - handleReceiveMessage - Size of received buffer (bytes):', receivedBuffer.length);
+
+//         // Try to decode the buffer to extract key information
+//         let key;
+//         try {
+//             const kvString = new TextDecoder().decode(receivedBuffer);
+//             const kv = JSON.parse(kvString);
+//             key = kv.key;
+
+//             // Log that we have received a new key-value pair
+//             log('client - handleReceiveMessage - Received key-value pair:', kv);
+//             log('client - handleReceiveMessage - key:', key);
+
+//             // Store the received chunk directly if it's not part of a larger message
+//             await storeReceivedChunk(peerStoreFolder, kv.key, kv.value);
+
+//             return;
+//         } catch (e) {
+//             // If parsing fails, it means the buffer is a part of a larger message
+//             log('client - handleReceiveMessage - Received buffer is part of a larger message.');
+//         }
+
+//         // Assuming that each chunk starts with a key that is included in the JSON string, we need to extract it and then assemble the chunks.
+//         const textDecoder = new TextDecoder();
+//         // const textEncoder = new TextEncoder();
+
+//         // Append the received buffer to the corresponding buffer array for the given key
+//         if (!receivedBuffers[key]) {
+//             receivedBuffers[key] = [];
+//             receivedSizes[key] = 0;
+//         }
+//         receivedBuffers[key].push(receivedBuffer);
+//         receivedSizes[key] += receivedBuffer.length;
+
+//         // Attempt to combine all received chunks
+//         const combinedBuffer = new Uint8Array(receivedSizes[key]);
+//         let offset = 0;
+//         receivedBuffers[key].forEach(buffer => {
+//             combinedBuffer.set(buffer, offset);
+//             offset += buffer.length;
+//         });
+
+//         // Try to decode and parse the combined buffer to check if we have received the complete message
+//         try {
+//             const combinedKvString = textDecoder.decode(combinedBuffer);
+//             const combinedKv = JSON.parse(combinedKvString);
+
+//             log('client - handleReceiveMessage - Successfully assembled key-value pair:', combinedKv);
+
+//             // Store the assembled message
+//             await storeReceivedChunk(peerStoreFolder, combinedKv.key, combinedKv.value);
+
+//             // Clear the buffers for this key after successfully processing the complete message
+//             delete receivedBuffers[key];
+//             delete receivedSizes[key];
+//             log('client - handleReceiveMessage - Successfully processed and reset buffers for key:', key);
+//         } catch (e) {
+//             // Continue to receive more chunks if JSON parsing fails
+//             log('client - handleReceiveMessage - Waiting for more chunks to complete the message for key:', key);
+//         }
+//     } else {
+//         log('client - handleReceiveMessage - Unexpected data type received:', receivedData);
+//     }
+// };
+
 const handleReceiveMessage = async (event) => {
-    log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-    log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-    log('client - handleReceiveMessage >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
     log('client - handleReceiveMessage - event...', event);
 
-    const storeHandles = await getLocalStoreHandle();
-    const peerStoreFolder = storeHandles.peerDbaseFolderHandle;
-    log('client - handleReceiveMessage - peerStoreFolder:', peerStoreFolder);
+    const message = JSON.parse(event.data);
+    log('client - handleReceiveMessage - Received message:', message);
 
-    const receivedData = event.data;
-    if (receivedData instanceof ArrayBuffer) {
-        const receivedBuffer = new Uint8Array(receivedData);
-        log('client - handleReceiveMessage - Size of received buffer (bytes):', receivedBuffer.length);
-
-        // Try to decode the buffer to extract key information
-        let key;
-        try {
-            const kvString = new TextDecoder().decode(receivedBuffer);
-            const kv = JSON.parse(kvString);
-            key = kv.key;
-
-            // Log that we have received a new key-value pair
-            log('client - handleReceiveMessage - Received key-value pair:', kv);
-            log('client - handleReceiveMessage - key:', key);
-
-            // Store the received chunk directly if it's not part of a larger message
-            await storeReceivedChunk(peerStoreFolder, kv.key, kv.value);
-
-            return;
-        } catch (e) {
-            // If parsing fails, it means the buffer is a part of a larger message
-            log('client - handleReceiveMessage - Received buffer is part of a larger message.');
-        }
-
-        // Assuming that each chunk starts with a key that is included in the JSON string, we need to extract it and then assemble the chunks.
-        const textDecoder = new TextDecoder();
-        // const textEncoder = new TextEncoder();
-
-        // Append the received buffer to the corresponding buffer array for the given key
-        if (!receivedBuffers[key]) {
-            receivedBuffers[key] = [];
-            receivedSizes[key] = 0;
-        }
-        receivedBuffers[key].push(receivedBuffer);
-        receivedSizes[key] += receivedBuffer.length;
-
-        // Attempt to combine all received chunks
-        const combinedBuffer = new Uint8Array(receivedSizes[key]);
-        let offset = 0;
-        receivedBuffers[key].forEach(buffer => {
-            combinedBuffer.set(buffer, offset);
-            offset += buffer.length;
-        });
-
-        // Try to decode and parse the combined buffer to check if we have received the complete message
-        try {
-            const combinedKvString = textDecoder.decode(combinedBuffer);
-            const combinedKv = JSON.parse(combinedKvString);
-
-            log('client - handleReceiveMessage - Successfully assembled key-value pair:', combinedKv);
-
-            // Store the assembled message
-            await storeReceivedChunk(peerStoreFolder, combinedKv.key, combinedKv.value);
-
-            // Clear the buffers for this key after successfully processing the complete message
-            delete receivedBuffers[key];
-            delete receivedSizes[key];
-            log('client - handleReceiveMessage - Successfully processed and reset buffers for key:', key);
-        } catch (e) {
-            // Continue to receive more chunks if JSON parsing fails
-            log('client - handleReceiveMessage - Waiting for more chunks to complete the message for key:', key);
-        }
+    if (message.type === 'text') {
+        handleTextMessageCallback(message.content);
+    } else if (message.type === 'data') {
+        handleDataMessageCallback(message.content);
     } else {
-        log('client - handleReceiveMessage - Unexpected data type received:', receivedData);
+        log('client - handleReceiveMessage - Unknown message type:', message.type);
     }
 };
+
+// const handleTextMessage = (text) => {
+//     log('client - handleTextMessage - text:', text);
+//     // Update the context with the new message
+//     // You can add your context update logic here if needed
+// };
+
+//???????
+// const handleTextMessage = (text) => {
+//     log('client - handleTextMessage - text:', text);
+//     // Update the context with the new message
+//     context.setNewMessage(text);
+//     context.setMessageCircleStatus(true);
+//     context.setMessageType('txt');
+//     context.setMessageContent(text);
+// };
+
+// const handleDataMessage = async (data) => {
+//     log('client - handleDataMessage - data:', data);
+
+//     const storeHandles = await getLocalStoreHandle();
+//     const peerStoreFolder = storeHandles.peerDbaseFolderHandle;
+//     log('client - handleDataMessage - peerStoreFolder:', peerStoreFolder);
+
+//     const receivedData = new Uint8Array(data);
+//     log('client - handleDataMessage - Size of received buffer (bytes):', receivedData.length);
+
+//     // Try to decode the buffer to extract key information
+//     let key;
+//     try {
+//         const kvString = new TextDecoder().decode(receivedData);
+//         const kv = JSON.parse(kvString);
+//         key = kv.key;
+
+//         // Log that we have received a new key-value pair
+//         log('client - handleDataMessage - Received key-value pair:', kv);
+//         log('client - handleDataMessage - key:', key);
+
+//         // Store the received chunk directly if it's not part of a larger message
+//         await storeReceivedChunk(peerStoreFolder, kv.key, kv.value);
+
+//         return;
+//     } catch (e) {
+//         // If parsing fails, it means the buffer is a part of a larger message
+//         log('client - handleDataMessage - Received buffer is part of a larger message.');
+//     }
+
+//     // Assuming that each chunk starts with a key that is included in the JSON string, we need to extract it and then assemble the chunks.
+//     const textDecoder = new TextDecoder();
+
+//     // Append the received buffer to the corresponding buffer array for the given key
+//     if (!receivedBuffers[key]) {
+//         receivedBuffers[key] = [];
+//         receivedSizes[key] = 0;
+//     }
+//     receivedBuffers[key].push(receivedData);
+//     receivedSizes[key] += receivedData.length;
+
+//     // Attempt to combine all received chunks
+//     const combinedBuffer = new Uint8Array(receivedSizes[key]);
+//     let offset = 0;
+//     receivedBuffers[key].forEach(buffer => {
+//         combinedBuffer.set(buffer, offset);
+//         offset += buffer.length;
+//     });
+
+//     // Try to decode and parse the combined buffer to check if we have received the complete message
+//     try {
+//         const combinedKvString = textDecoder.decode(combinedBuffer);
+//         const combinedKv = JSON.parse(combinedKvString);
+
+//         log('client - handleDataMessage - Successfully assembled key-value pair:', combinedKv);
+
+//         // Store the assembled message
+//         await storeReceivedChunk(peerStoreFolder, combinedKv.key, combinedKv.value);
+
+//         // Clear the buffers for this key after successfully processing the complete message
+//         delete receivedBuffers[key];
+//         delete receivedSizes[key];
+//         log('client - handleDataMessage - Successfully processed and reset buffers for key:', key);
+//     } catch (e) {
+//         // Continue to receive more chunks if JSON parsing fails
+//         log('client - handleDataMessage - Waiting for more chunks to complete the message for key:', key);
+//     }
+// };
+
+//???????
+// const handleDataMessage = async (data) => {
+//     log('client - handleDataMessage - data:', data);
+
+//     const storeHandles = await getLocalStoreHandle();
+//     const peerStoreFolder = storeHandles.peerDbaseFolderHandle;
+//     log('client - handleDataMessage - peerStoreFolder:', peerStoreFolder);
+
+//     const receivedData = new Uint8Array(data);
+//     log('client - handleDataMessage - Size of received buffer (bytes):', receivedData.length);
+
+//     // Try to decode the buffer to extract key information
+//     let key;
+//     try {
+//         const kvString = new TextDecoder().decode(receivedData);
+//         const kv = JSON.parse(kvString);
+//         key = kv.key;
+
+//         // Log that we have received a new key-value pair
+//         log('client - handleDataMessage - Received key-value pair:', kv);
+//         log('client - handleDataMessage - key:', key);
+
+//         // Store the received chunk directly if it's not part of a larger message
+//         await storeReceivedChunk(peerStoreFolder, kv.key, kv.value);
+
+//         context.setNewDataMessage(key);
+//         context.setMessageCircleStatus(true);
+//         context.setMessageType('data');
+//         context.setMessageContent(key);
+
+//         return;
+//     } catch (e) {
+//         // If parsing fails, it means the buffer is a part of a larger message
+//         log('client - handleDataMessage - Received buffer is part of a larger message.');
+//     }
+
+//     // Assuming that each chunk starts with a key that is included in the JSON string, we need to extract it and then assemble the chunks.
+//     const textDecoder = new TextDecoder();
+
+//     // Append the received buffer to the corresponding buffer array for the given key
+//     if (!receivedBuffers[key]) {
+//         receivedBuffers[key] = [];
+//         receivedSizes[key] = 0;
+//     }
+//     receivedBuffers[key].push(receivedData);
+//     receivedSizes[key] += receivedData.length;
+
+//     // Attempt to combine all received chunks
+//     const combinedBuffer = new Uint8Array(receivedSizes[key]);
+//     let offset = 0;
+//     receivedBuffers[key].forEach(buffer => {
+//         combinedBuffer.set(buffer, offset);
+//         offset += buffer.length;
+//     });
+
+//     // Try to decode and parse the combined buffer to check if we have received the complete message
+//     try {
+//         const combinedKvString = textDecoder.decode(combinedBuffer);
+//         const combinedKv = JSON.parse(combinedKvString);
+
+//         log('client - handleDataMessage - Successfully assembled key-value pair:', combinedKv);
+
+//         // Store the assembled message
+//         await storeReceivedChunk(peerStoreFolder, combinedKv.key, combinedKv.value);
+
+//         // Clear the buffers for this key after successfully processing the complete message
+//         delete receivedBuffers[key];
+//         delete receivedSizes[key];
+//         log('client - handleDataMessage - Successfully processed and reset buffers for key:', key);
+
+//         context.setNewDataMessage(combinedKv.key);
+//         context.setMessageCircleStatus(true);
+//         context.setMessageType('data');
+//         context.setMessageContent(combinedKv.key);
+//     } catch (e) {
+//         // Continue to receive more chunks if JSON parsing fails
+//         log('client - handleDataMessage - Waiting for more chunks to complete the message for key:', key);
+//     }
+// };
+
+
+
 
 // const storeReceivedChunk = async (peerStoreFolder, folderName, chunkData) => {
 //     try {

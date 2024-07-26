@@ -5,7 +5,6 @@ import { initDatabase, checkDbOpen, processAndStoreFile, deriveKeyFromSignature,
 import { getAccount, getPublicKey, signData } from '../services/metamask';
 import DangerModal from './DangerModal';
 import OrangeModal from './OrangeModal';
-// import Spinner from './Spinner';
 import ProgressBar from './ProgressBar';
 import CombinedModal from './CombinedModal';
 import ErrorModal from './ErrorModal';
@@ -96,7 +95,7 @@ const MyData = () => {
                     alert("Please set the local store before uploading files.");
                     return;
                 }
-
+                // Use MetaMask PublicKey 
                 let key;
                 if (encryptionMethod === 'MetaMask') {
                     const publicKeyString = await getPublicKey();
@@ -107,6 +106,7 @@ const MyData = () => {
                     const sig = await signData(walletAddress);
                     key = await deriveKeyFromSignature(sig, walletAddress);
                 } else if (encryptionMethod === 'Password') {
+                    // Use Password
                     key = await deriveKeyFromPassword(password);
                 }
 
