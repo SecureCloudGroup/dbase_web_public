@@ -6,7 +6,7 @@ import { processAndStoreFile, deriveKeyFromSignature, getFileCount } from '../se
 import { deriveKeyFromPassword } from '../services/deriveKeyFromPassword';
 
 const CombinedModal = ({ isOpen, onClose, onSave, initialFileName }) => {
-    const {bnodeid, localStoreFolder, setReadyToCommunicate } = useContext(AppContext);
+    const {bnodeid, localStoreFolder, setWsConnected, setReadyToCommunicate } = useContext(AppContext);
     const [newFileName, setNewFileName] = useState(initialFileName);
     const [saveToDBase, setSaveToDBase] = useState(true);
     const [encryptionMethod, setEncryptionMethod] = useState('MetaMask');
@@ -86,6 +86,7 @@ const CombinedModal = ({ isOpen, onClose, onSave, initialFileName }) => {
                 localStoreFolder,
                 setProgress,
                 saveToDBase,
+                setWsConnected,
                 setReadyToCommunicate,
                 encryptionMethod
             );

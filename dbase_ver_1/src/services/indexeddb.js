@@ -207,10 +207,11 @@ export const processAndStoreFile = async (
     localStoreHandle, 
     progressCallback, 
     saveFileToDBase, 
+    setWsConnected,
     setReadyToCommunicate,
     encryptionMethod,
-    peerStoreFolder) => {
-    
+    peerStoreFolder
+    ) => {
     console.log("indexeddb - processAndStoreFile - localStoreHandle: ", localStoreHandle);
     const chunkSize = 128 * 1024; // 0.125MB chunks
     let offset = 0;
@@ -267,6 +268,7 @@ export const processAndStoreFile = async (
                             encryptedChunk: encryptedChunk,
                             encryptionMethod: encryptionMethod
                         }
+                        // Store KV chunkCID,chunkMeta in arrary
                         kvPairs.push({ key: chunkCID, value: chunkMeta });
                     }
                     
@@ -275,6 +277,7 @@ export const processAndStoreFile = async (
                         localStoreHandle = await getLocalStoreHandle('local');
                         localStoreHandle = localStoreHandle.dbaseFolderHandle;
                     }
+                    // Save chunk to local indexeddb
                     await saveChunkToLocalStore(encodedFileName, chunkIndex, encryptedChunk, localStoreHandle);
 
                     chunkIndex++;
@@ -300,7 +303,9 @@ export const processAndStoreFile = async (
                             if (wallet_address) {
                                 const list_of_peers = await get_peers_for_dbase_file(wallet_address);
                                 if(list_of_peers.length >= 1) {
-                                    copy_file_to_peers(setReadyToCommunicate, list_of_peers, kvPairs, peerStoreFolder);
+                                    copy_file_to_peers(setWsConnected,setReadyToCommunicate, list_of_peers, kvPairs, peerStoreFolder);
+                                } else {
+                                    console.log("indexeddb - processAndStoreFile - ERROR: get_peers_for_dbase_file returned zero peers. ");
                                 }
                             }
                         }

@@ -12,7 +12,7 @@ import { deriveKeyFromPassword } from '../services/deriveKeyFromPassword';
 import { downloadLocalStoreFile } from '../services/localStore';
 
 const MyData = () => {
-    const { bnodeid, localStoreFolder, setReadyToCommunicate, useLightTheme } = useContext(AppContext);
+    const { bnodeid, localStoreFolder, setWsConnected, setReadyToCommunicate, useLightTheme } = useContext(AppContext);
     const themeClass = useLightTheme ? 'light-theme' : 'dark-theme';
     const tableBackgroundColor = useLightTheme ? '#FFFFFF' : '#2C3531';
     const tableTextColor = useLightTheme ? '#3D52A0' : '#D1E8E2';
@@ -120,6 +120,7 @@ const MyData = () => {
                     localStoreFolder,
                     setProgress,
                     saveToDBase,
+                    setWsConnected,
                     setReadyToCommunicate,
                     encryptionMethod
                 );
