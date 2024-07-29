@@ -224,7 +224,6 @@ const AppProvider = ({ children }) => {
                 setNewDataMessage,
                 setTargetPeerId,
                 sendMessage,
-                setTargetPeerId,
                 messageType,
                 messageContent,
                 messageCircleStatus,

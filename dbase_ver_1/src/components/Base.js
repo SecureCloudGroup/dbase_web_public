@@ -143,20 +143,12 @@ const Base = ({ children }) => {
 
                         <div className="indicators">
 
-                            {/* <div
-                                className={`webrtc-status-circle ${messageCircleStatus ? 'new-message' : ''}`}
-                                style={{ backgroundColor: messageCircleStatus ? '#2ECC71' : '#C0392B' }}
-                                onClick={handleMsgClick}
-                            >
-                                {messageType || 'MSG'}
-                            </div> */}
-
                             {messageCircleStatus && (
                                 <div className="webrtc-status-circle new-message" style={{ backgroundColor: indicatorConnectedColor }} onClick={handleMessageCircleClick}>
                                     {messageType}
                                 </div>
                             )}
-
+                            
                             <div className={`webrtc-status-circle ${wsConnected ? 'connected' : 'disconnected'}`} style={{ backgroundColor: wsConnected ? indicatorConnectedColor : indicatorDisconnectedColor }}>
                                 WS
                             </div>

@@ -14,11 +14,7 @@ const PeerData = () => {
         readyToCommunicate, 
         setReadyToCommunicate, 
         useLightTheme,
-        // newMessage,
-        // messageType,
-        // messageContent,
-        // messageCircleStatus,
-        // setMessageCircleStatus
+        wsConnected
     } = useContext(AppContext);
     const themeClass = useLightTheme ? 'light-theme' : 'dark-theme';
     const tableBackgroundColor = useLightTheme ? '#FFFFFF' : '#2C3531';
@@ -54,7 +50,7 @@ const PeerData = () => {
 
     const handleSendMessage = () => {
         if (message) {
-            sendMessage(message);
+            sendMessage(setReadyToCommunicate, message);
             setMessage('');
         }
     };
@@ -142,51 +138,11 @@ const PeerData = () => {
         return decodedName.startsWith('dbase_') ? decodedName.slice(6) : decodedName;
     };
 
+    const isDisabled = !readyToCommunicate || !targetPeerId || !wsConnected;
+
     return (
         <div className={themeClass}>
-            {/* <style>
-                {`
-                .webrtc-status-circle {
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    color: white;
-                    margin-left: 10px;
-                    font-size: 12px;
-                }
-
-                .connected {
-                    background-color: ${indicatorConnectedColor};
-                }
-
-                .disconnected {
-                    background-color: ${indicatorDisconnectedColor};
-                }
-
-                .ready {
-                    background-color: ${indicatorReadyColor};
-                }
-
-                .not-ready {
-                    background-color: ${indicatorNotReadyColor};
-                }
-
-                .peer-info {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    width: 100%;
-                }
-
-                .indicators {
-                    display: flex;
-                    gap: 10px;
-                }
-                `}
-            </style> */}
+            
             <div className="row mt-4">
                 <div className="col-12">
                     <div className={`d-flex flex-column ml-12 ${themeClass}-text`}>
@@ -195,14 +151,6 @@ const PeerData = () => {
                                 <span className="me-3" style={{ minWidth: '150px' }}>My BnodeId (peer id):</span>
                                 <a>{bnodeid}</a>
                             </div>
-                            {/* <div className="indicators">
-                                <div className={`webrtc-status-circle ${wsConnected ? 'connected' : 'disconnected'}`}>
-                                    WS
-                                </div>
-                                <div className={`webrtc-status-circle ${readyToCommunicate ? 'ready' : 'not-ready'}`}>
-                                    CHNL
-                                </div>
-                            </div> */}
                         </div>
                         <div className="d-flex align-items-center">
                             <label className="me-3" htmlFor="targetPeerId" style={{ minWidth: '150px' }}>Target Peer ID:</label>
@@ -219,8 +167,21 @@ const PeerData = () => {
                             style={{ width: '80%' }}
                         ></textarea>
                     </div>
-                    <div className="ml-12 btn btn-success">
-                        <button onClick={handleSendMessage} disabled={!readyToCommunicate}>Send Message</button>
+                    <div 
+                        className="ml-12 btn btn-success" 
+                        style={{
+                            '--bs-btn-bg': isDisabled ? 'orange' : 'green',
+                            color: isDisabled ? 'white' : 'black',
+                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                            width: 'auto'}} 
+                    >
+                        {/* <button onClick={handleSendMessage} disabled={!readyToCommunicate || !targetPeerId || !wsConnected}>Send Message</button> */}
+                        <button
+                            onClick={handleSendMessage}
+                            disabled={isDisabled}
+                        >
+                        Send Message 
+                        </button>
                     </div>
                     <div id="messages"></div>
                 </div>

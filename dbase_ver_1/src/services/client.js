@@ -225,12 +225,13 @@ const fetchTurnCredentials = async () => {
 //     });
 // };
 
-const initializeWebSocket = (peerId, setReadyToCommunicate) => {
+const initializeWebSocket = (peerId, setWsConnected, setReadyToCommunicate) => {
     const connect = () => {
         websocket = new WebSocket(`wss://${server_address}/ws/${peerId}`);
 
         websocket.onopen = () => {
             log("WebSocket connection opened");
+            setWsConnected(true);
             startHeartbeat();
         };
 
@@ -320,7 +321,7 @@ export const initializeWebRTC = async (currentLocalPeerId, setWsConnected, setRe
     log('client - initializeWebRTC - Initializing WebRTC for peer:', myLocalPeerId);
 
     try {
-        initializeWebSocket(myLocalPeerId, setReadyToCommunicate);
+        initializeWebSocket(myLocalPeerId, setWsConnected, setReadyToCommunicate);
     } catch (error) {
         log('client - initializeWebRTC - Error initializing WebSocket:', error);
     }
@@ -378,17 +379,58 @@ export const setHandleDataMessageCallback = (callback) => {
 //     }
 // };
 
-export const sendMessage = (message, type = 'text') => {
+// export const sendMessage = (message, type = 'text') => {
+//     log('client - sendMessage - message:', message);
+//     const msg = JSON.stringify({ type, content: message });
+//     if (sendChannel && sendChannel.readyState === 'open') {
+//         sendChannel.send(msg);
+//         log('client - sendMessage - Sent message:', message);
+//         log('client - sendMessage - Sent msg:', msg);
+//     } else {
+//         log('client - sendMessage - Data channel is not open. Message not sent.');
+//     }
+// };
+
+// Attempt to open WebRTC and Send MSG 3 times before fail.
+export const sendMessage = async (setReadyToCommunicate, message, type = 'text', retries = 3) => {
     log('client - sendMessage - message:', message);
     const msg = JSON.stringify({ type, content: message });
+    // ensure WebRTC is Open
     if (sendChannel && sendChannel.readyState === 'open') {
         sendChannel.send(msg);
         log('client - sendMessage - Sent message:', message);
         log('client - sendMessage - Sent msg:', msg);
     } else {
-        log('client - sendMessage - Data channel is not open. Message not sent.');
+        log('client - sendMessage - Data channel is not open, trying to Open WebRTC.');
+        // Try to open WebRTC
+        if (retries > 0) {
+            log(`client - sendMessage - Retrying to send message. Attempts left: ${retries}`);
+            await setupWebRTC(setReadyToCommunicate);
+            // Wait for the sendChannel to be open
+            let attempt = 0;
+            const maxAttempts = 10;
+            const waitInterval = 500; // in milliseconds
+            // continue to attempt 
+            while (attempt < maxAttempts && (!sendChannel || sendChannel.readyState !== 'open')) {
+                attempt++;
+                log('client - sendMessage - Waiting for sendChannel to open...');
+                await new Promise(resolve => setTimeout(resolve, waitInterval));
+            }
+            // Once WebRTC is Open, send message
+            if (sendChannel && sendChannel.readyState === 'open') {
+                sendChannel.send(msg);
+                log('client - sendMessage - Sent message after retry:', message);
+                log('client - sendMessage - Sent msg:', msg);
+            } else {
+                log('client - sendMessage - Failed to send message after retry. sendChannel is still not open.');
+                await sendMessage(setReadyToCommunicate, message, type, retries - 1);
+            }
+        } else {
+            log('client - sendMessage - Max retries reached. Message not sent.');
+        }
     }
 };
+
 
 
 // const setupWebRTC = async (setReadyToCommunicate) => {
@@ -1416,7 +1458,7 @@ const establishPeerConnection = async (setWsConnected, setReadyToCommunicate, pe
 
     if (!websocket || websocket.readyState !== WebSocket.OPEN) {
         try {
-            await initializeWebSocket(myLocalPeerId, setReadyToCommunicate);
+            await initializeWebSocket(myLocalPeerId, setWsConnected, setReadyToCommunicate);
         } catch (error) {
             log('client - establishPeerConnection - Error initializing WebSocket:', error);
             return;
