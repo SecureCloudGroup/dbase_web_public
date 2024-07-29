@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=/" />
+    <script>
+      // This script redirects to the root and retains the path as a URL parameter
+      (function() {
+        var path = window.location.pathname;
+        var search = window.location.search;
+        var hash = window.location.hash;
+        var newUrl = '/' + (search ? search : '') + (hash ? hash : '');
+        window.location.href = newUrl;
+      })();
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
