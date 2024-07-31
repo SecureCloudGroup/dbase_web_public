@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { AppContext } from '../context/AppContext';
-import { initDatabase, checkDbOpen, processAndStoreFile, deriveKeyFromSignature, updateFileTable, getFileCount, deleteFile, checkLocalFileExistence, decodeFileName } from '../services/indexeddb';
+import { 
+    initDatabase, 
+    checkDbOpen, 
+    processAndStoreFile, 
+    deriveKeyFromSignature, 
+    updateFileTable, 
+    getFileCount, 
+    deleteFile, 
+    checkLocalFileExistence, 
+    decodeFileName } from '../services/indexeddb';
 import { getAccount, getPublicKey, signData } from '../services/metamask';
 import DangerModal from './DangerModal';
 import OrangeModal from './OrangeModal';

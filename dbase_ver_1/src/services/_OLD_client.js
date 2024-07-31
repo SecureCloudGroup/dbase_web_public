@@ -12,7 +12,6 @@ let peerConnections = {};
 
 const log = console.log;
 const server_address = 'api.securecloudgroup.com';
-const turn_api = '725649c5ea4be63aff9781ecf3f1d69cab36';
 
 const fetchTurnCredentials = async () => {
     try {
